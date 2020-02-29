@@ -9,6 +9,6 @@
         public int total { get; set; }
         public int total_pages { get; set; }
 
-        public IList<UserObject> data { get; set; }
+        public List<UserObject> data { get; set; }
     }
 }

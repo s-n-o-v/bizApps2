@@ -1,4 +1,6 @@
-﻿<%@ Page Title="Главная" Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="_Default" %>
+﻿<%@ Page Title="Главная" Language="C#" MasterPageFile="~/MasterPage.master" AutoEventWireup="true" CodeFile="Default.aspx.cs" Inherits="bizApps._Default" %>
+
+<%@ Register Assembly="CoreLibrary" Namespace="CoreLibrary" TagPrefix="ololo" %>
 
 <asp:Content ID="BodyContent" ContentPlaceHolderID="MainContent" runat="server">
     <h1>bizApps test #2</h1>
@@ -37,41 +39,14 @@
     <hr/ />
 
     <div class="row">
-        <asp:GridView ID="gv" runat="server" AutoGenerateColumns="false">
+        <ololo:MyGridView ID="mygv" runat="server" AutoGenerateColumns="false">
             <Columns>
-                <asp:TemplateField HeaderText="">
-                    <ItemTemplate>
-                        <asp:CheckBox ID="selected" runat="server" />
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="User Id">
-                    <ItemTemplate>
-                        <asp:Label ID="labelID" runat="server" Text='<%# Bind("id") %>'></asp:Label>
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="First Name">
-                    <ItemTemplate>
-                        <asp:Label ID="labelfirstname" runat="server" Text='<%# Bind("first_name") %>'></asp:Label>
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="Last Name">
-                    <ItemTemplate>
-                        <asp:Label ID="labellastname" runat="server" Text='<%# Bind("last_name") %>'></asp:Label>
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="User email">
-                    <ItemTemplate>
-                        <asp:Label ID="labelemail" runat="server" Text='<%# Bind("email") %>' ></asp:Label>
-                    </ItemTemplate>
-                </asp:TemplateField>
-                <asp:TemplateField HeaderText="Avatar">
-                    <ItemTemplate>
-                        <asp:Label ID="labelavatar" runat="server" Text='<%# Bind("avatar") %>' ></asp:Label>
-                    </ItemTemplate>
-                </asp:TemplateField>
+                <asp:BoundField HeaderText="User Id" DataField="id" />
+                <asp:BoundField HeaderText="First Name" DataField="first_name" />
+                <asp:BoundField HeaderText="Last Name" DataField="last_name" />
+                <asp:BoundField HeaderText="User email" DataField="email" />
+                <asp:BoundField HeaderText="Le Avatar" DataField="avatar" />
             </Columns>
-
-        </asp:GridView>
+        </ololo:MyGridView>
     </div>
-
 </asp:Content>

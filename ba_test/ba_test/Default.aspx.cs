@@ -7,98 +7,112 @@ using System.Web.UI.WebControls;
 using CoreLibrary;
 using Newtonsoft.Json;
 
-public partial class _Default : System.Web.UI.Page
+namespace bizApps
 {
-    private const string _url = "https://reqres.in";
-    private const string _service = "api/users?";
-
-    private RestService srvc;
-    private IList<UserObject> list;
-
-    protected void Page_Load(object sender, EventArgs e)
+    public partial class _Default : System.Web.UI.Page
     {
-        save.Enabled = false;
-        srvc = new RestService(_url);
-    }
+        private const string _url = "https://reqres.in";
+        private const string _service = "api/users?";
+        List<UserObject> list;
 
-    protected void load_Click(object sender, EventArgs e)
-    {
-        SearchForm frm = new SearchForm();
-        if (!string.IsNullOrEmpty(edParam1.Text)) frm.itemsPerPage = Convert.ToInt32(edParam1.Text);
-        if (!string.IsNullOrEmpty(edParam2.Text)) frm.PageNum = Convert.ToInt32(edParam2.Text);
-
-        // Очищаем грид
-        gv.DataSource = null;
-        gv.DataBind();
-
-        var context = new ValidationContext(frm);
-        var results = new List<ValidationResult>();
-        var formValid = Validator.TryValidateObject(frm, context, results, true);
-
-        if (formValid)
+        protected void Page_Load(object sender, EventArgs e)
         {
-            bool control1_empty = string.IsNullOrEmpty(edParam1.Text);
-            bool control2_empty = string.IsNullOrEmpty(edParam2.Text);
-            string urlParam = _service;
-            urlParam += control1_empty ? "" : "per_page=" + edParam1.Text;
-            urlParam += control2_empty ? "" : (urlParam.Length > _service.Length ? "&" : "") + "page=" + edParam2.Text;
+            if (!IsPostBack)
+                save.Enabled = false;
 
-            string service_data = srvc.GetData(urlParam);
-
-            DataObject _data = JsonConvert.DeserializeObject<DataObject>(service_data);
-            list = _data.data;
-            save.Enabled = list.Count > 0;
-
-            gv.DataSource = list;
-            gv.DataBind();
-        }
-        else
-        {
-            string errorList = "";
-            foreach (var validationResult in results)
+            if (Session["list"] != null)
             {
-                errorList += validationResult.ErrorMessage.ToString() + "<br />";
+                list = (List<UserObject>)Session["list"];
+            } else
+            {
+                list = new List<UserObject>();
             }
-            MyValidator.IsValid = false;
-            MyValidator.ErrorMessage = errorList;
+            mygv.DataSource = list;
         }
-    }
 
-    protected void save_Click(object sender, EventArgs e)
-    {
-        IList<UserObject> sel = new List<UserObject>();
-        foreach (GridViewRow row in gv.Rows)
+        protected void load_Click(object sender, EventArgs e)
         {
-            var cb = row.FindControl("selected") as CheckBox;
-            if (cb.Checked)
+            SearchForm frm = new SearchForm();
+            if (!string.IsNullOrEmpty(edParam1.Text)) frm.itemsPerPage = Convert.ToInt32(edParam1.Text);
+            if (!string.IsNullOrEmpty(edParam2.Text)) frm.PageNum = Convert.ToInt32(edParam2.Text);
+
+            mygv.DataSource = null;
+            mygv.DataBind();
+
+            var context = new ValidationContext(frm);
+            var results = new List<ValidationResult>();
+            var formValid = Validator.TryValidateObject(frm, context, results, true);
+
+            if (formValid)
             {
-                UserObject o = new UserObject();
-                o.id = Convert.ToInt32((row.FindControl("labelID") as Label).Text);
-                o.email = (row.FindControl("labelemail") as Label).Text;
-                o.first_name = (row.FindControl("labelfirstname") as Label).Text;
-                o.last_name = (row.FindControl("labellastname") as Label).Text;
-                o.avatar = (row.FindControl("labelavatar") as Label).Text;
-                sel.Add(o);
+                RestService srvc = new RestService(_url);
+
+                bool control1_empty = string.IsNullOrEmpty(edParam1.Text);
+                bool control2_empty = string.IsNullOrEmpty(edParam2.Text);
+                string urlParam = _service;
+                urlParam += control1_empty ? "" : "per_page=" + edParam1.Text;
+                urlParam += control2_empty ? "" : (urlParam.Length > _service.Length ? "&" : "") + "page=" + edParam2.Text;
+
+                string service_data = srvc.GetData(urlParam);
+
+                DataObject _data = JsonConvert.DeserializeObject<DataObject>(service_data);
+                list = _data.data;
+                save.Enabled = list.Count > 0;
+                Session["list"] = list;
+
+                mygv.DataSource = list;
+                mygv.DataBind();
+            }
+            else
+            {
+                string errorList = "";
+                foreach (var validationResult in results)
+                {
+                    errorList += validationResult.ErrorMessage.ToString() + "<br />";
+                }
+                MyValidator.IsValid = false;
+                MyValidator.ErrorMessage = errorList;
             }
         }
-        // Валидируем наличие отмеченных строк
-        if (sel.Count == 0)
+
+        protected void save_Click(object sender, EventArgs e)
         {
-            MyValidator.IsValid = false;
-            MyValidator.ErrorMessage = "Не выбрано ни одной записи";
+            IList<UserObject> sel = new List<UserObject>();
+            foreach (GridViewRow row in mygv.Rows)
+            {
+                var cb = row.FindControl("selected") as CheckBox;
+                if (cb.Checked)
+                {
+                    UserObject o = new UserObject
+                    {
+                        id = Convert.ToInt32(row.Cells[1].Text),
+                        first_name = row.Cells[2].Text,
+                        last_name = row.Cells[3].Text,
+                        email = row.Cells[4].Text,
+                        avatar = row.Cells[5].Text
+                    };
+                    sel.Add(o);
+                }
+            }
+            // Валидируем наличие отмеченных строк
+            if (sel.Count == 0)
+            {
+                MyValidator.IsValid = false;
+                MyValidator.ErrorMessage = "Не выбрано ни одной записи";
+            }
+            else
+            {
+                string json_data = JsonConvert.SerializeObject(sel);
+                byte[] byteArray = Encoding.ASCII.GetBytes(json_data);
+                MemoryStream stream = new MemoryStream(byteArray);
+                // Дополнительно можно сохранить на диск
+                Response.ContentType = "application/force-download";
+                Response.AddHeader("Content-Disposition", "attachment; filename=\"report.json\"");
+                Response.BufferOutput = false;
+                Response.OutputStream.Write(byteArray, 0, byteArray.Length);
+                Response.End();
+            }
+            save.Enabled = true;
         }
-        else
-        {
-            string json_data = JsonConvert.SerializeObject(sel);
-            byte[] byteArray = Encoding.ASCII.GetBytes(json_data);
-            MemoryStream stream = new MemoryStream(byteArray);
-            // Дополнительно можно сохранить на диск
-            Response.ContentType = "application/force-download";
-            Response.AddHeader("Content-Disposition", "attachment; filename=\"report.json\"");
-            Response.BufferOutput = false;
-            Response.OutputStream.Write(byteArray, 0, byteArray.Length);
-            Response.End();
-        }
-        save.Enabled = true;
     }
 }
