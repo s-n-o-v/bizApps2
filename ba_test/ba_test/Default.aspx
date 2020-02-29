@@ -18,21 +18,25 @@
                 </tr>
                 <tr>
                     <td>
-                        <asp:TextBox ID="edParam1" name="edParam1" runat="server" CssClass="form-control" type="number" min="1" step="1" placeholder="Укажите кол-во элементов" />
+                        <asp:TextBox ID="edParam1" name="edParam1" runat="server" CssClass="form-control" type="number" min="1" step="1" placeholder="Укажите кол-во элементов" ValidationGroup="1" />
                     </td>
                     <td>
-                        <asp:TextBox ID="edParam2" runat="server" CssClass="form-control" type="number" min="1" step="1" placeholder="Укажите № страницы" />
+                        <asp:TextBox ID="edParam2" runat="server" CssClass="form-control" type="number" min="1" step="1" placeholder="Укажите № страницы" ValidationGroup="1" />
                     </td>
                     <td>
-                        <asp:Button ID="load" runat="server" Text="Загрузить" CssClass="btn" OnClick="load_Click" />
-                        <asp:Button ID="save" runat="server" Text="Сохранить" CssClass="btn" Enabled="false" OnClick="save_Click" />
+                        <asp:Button ID="load" runat="server" Text="Загрузить" CssClass="btn" OnClick="load_Click" ValidationGroup="1" />
+                        <asp:Button ID="save" runat="server" Text="Сохранить" CssClass="btn" Enabled="false" OnClick="save_Click" ValidateRequestMode="Enabled" ValidationGroup="2" />
                     </td>
                 </tr>
             </tbody>
         </table>
     </div>
     <div class="row" style="padding-left: 15px;">
-        <asp:CustomValidator runat="server" ID="MyValidator" Display="None" EnableClientScript="false" />
+        <asp:CustomValidator runat="server" ID="MyValidator" Display="None" 
+            EnableClientScript="true" 
+            OnServerValidate="MyValidator_ServerValidate"
+            ClientValidationFunction="ClientValidate" ErrorMessage="Необходимо заполнить хотя бы одно поле" ValidationGroup="1" />
+        <asp:CustomValidator runat="server" ID="selectedValidator" EnableClientScript="false" OnServerValidate="selectedValidator_ServerValidate" ValidationGroup="2" />
         <asp:ValidationSummary ID="ErrorSummary" runat="server" HeaderText="Ошибки валидации" CssClass="validationError" />
     </div>
 
@@ -41,6 +45,11 @@
     <div class="row">
         <ololo:MyGridView ID="mygv" runat="server" AutoGenerateColumns="false">
             <Columns>
+                <asp:TemplateField HeaderText="">
+                    <ItemTemplate>
+                        <asp:CheckBox ID="selected" runat="server" />
+                    </ItemTemplate>
+                </asp:TemplateField>
                 <asp:BoundField HeaderText="User Id" DataField="id" />
                 <asp:BoundField HeaderText="First Name" DataField="first_name" />
                 <asp:BoundField HeaderText="Last Name" DataField="last_name" />
@@ -49,4 +58,25 @@
             </Columns>
         </ololo:MyGridView>
     </div>
+
+    <script type="text/javascript">
+        $(function() {
+            console.log( "ready!" );
+        });
+
+        function ClientValidate(source, arguments)
+        {
+            console.log('source', source);
+            var isValid = false;
+
+            $('.form-control').each(function (item) {
+                if ($(this).val() !== '') {
+                    isValid = true;
+                }
+                console.info('item ' + item, $( this ).val());
+            });
+            console.info('isValid', isValid);
+            arguments.IsValid = isValid;
+        }
+    </script>
 </asp:Content>

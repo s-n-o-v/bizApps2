@@ -17,34 +17,25 @@ namespace bizApps
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (!IsPostBack)
-                save.Enabled = false;
-
             if (Session["list"] != null)
             {
                 list = (List<UserObject>)Session["list"];
-            } else
+            }
+            else
             {
                 list = new List<UserObject>();
             }
-            mygv.DataSource = list;
+
+            save.Enabled = list.Count > 0;
         }
 
         protected void load_Click(object sender, EventArgs e)
         {
-            SearchForm frm = new SearchForm();
-            if (!string.IsNullOrEmpty(edParam1.Text)) frm.itemsPerPage = Convert.ToInt32(edParam1.Text);
-            if (!string.IsNullOrEmpty(edParam2.Text)) frm.PageNum = Convert.ToInt32(edParam2.Text);
-
-            mygv.DataSource = null;
-            mygv.DataBind();
-
-            var context = new ValidationContext(frm);
-            var results = new List<ValidationResult>();
-            var formValid = Validator.TryValidateObject(frm, context, results, true);
-
-            if (formValid)
+            if (MyValidator.IsValid)
             {
+                mygv.DataSource = null;
+                mygv.DataBind();
+
                 RestService srvc = new RestService(_url);
 
                 bool control1_empty = string.IsNullOrEmpty(edParam1.Text);
@@ -63,7 +54,35 @@ namespace bizApps
                 mygv.DataSource = list;
                 mygv.DataBind();
             }
-            else
+        }
+
+        protected void save_Click(object sender, EventArgs e)
+        {
+            if (selectedValidator.IsValid)
+            {
+                string json_data = JsonConvert.SerializeObject(list);
+                byte[] byteArray = Encoding.ASCII.GetBytes(json_data);
+                MemoryStream stream = new MemoryStream(byteArray);
+                // Дополнительно можно сохранить на диск
+                Response.ContentType = "application/force-download";
+                Response.AddHeader("Content-Disposition", "attachment; filename=\"report.json\"");
+                Response.BufferOutput = false;
+                Response.OutputStream.Write(byteArray, 0, byteArray.Length);
+                Response.End();
+            }
+        }
+
+        protected void MyValidator_ServerValidate(object source, ServerValidateEventArgs args)
+        {
+            SearchForm frm = new SearchForm();
+            if (!string.IsNullOrEmpty(edParam1.Text)) frm.itemsPerPage = Convert.ToInt32(edParam1.Text);
+            if (!string.IsNullOrEmpty(edParam2.Text)) frm.PageNum = Convert.ToInt32(edParam2.Text);
+
+            var context = new ValidationContext(frm);
+            var results = new List<ValidationResult>();
+            var formValid = Validator.TryValidateObject(frm, context, results, true);
+
+            if (!formValid)
             {
                 string errorList = "";
                 foreach (var validationResult in results)
@@ -75,9 +94,10 @@ namespace bizApps
             }
         }
 
-        protected void save_Click(object sender, EventArgs e)
+        protected void selectedValidator_ServerValidate(object source, ServerValidateEventArgs args)
         {
-            IList<UserObject> sel = new List<UserObject>();
+            list = new List<UserObject>();
+
             foreach (GridViewRow row in mygv.Rows)
             {
                 var cb = row.FindControl("selected") as CheckBox;
@@ -91,28 +111,18 @@ namespace bizApps
                         email = row.Cells[4].Text,
                         avatar = row.Cells[5].Text
                     };
-                    sel.Add(o);
+                    list.Add(o);
                 }
             }
             // Валидируем наличие отмеченных строк
-            if (sel.Count == 0)
+            if (list.Count == 0)
             {
-                MyValidator.IsValid = false;
-                MyValidator.ErrorMessage = "Не выбрано ни одной записи";
-            }
-            else
+                selectedValidator.IsValid = false;
+                selectedValidator.ErrorMessage = "Не выбрано ни одной записи";
+            } else
             {
-                string json_data = JsonConvert.SerializeObject(sel);
-                byte[] byteArray = Encoding.ASCII.GetBytes(json_data);
-                MemoryStream stream = new MemoryStream(byteArray);
-                // Дополнительно можно сохранить на диск
-                Response.ContentType = "application/force-download";
-                Response.AddHeader("Content-Disposition", "attachment; filename=\"report.json\"");
-                Response.BufferOutput = false;
-                Response.OutputStream.Write(byteArray, 0, byteArray.Length);
-                Response.End();
+                selectedValidator.IsValid = true;
             }
-            save.Enabled = true;
         }
     }
 }
